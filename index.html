@@ -5,17 +5,40 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Task Dashboard</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
     :root {
       --primary-color: #b71c1c;
       --accent-color: #fbc02d;
+      --background-gradient: linear-gradient(to right, #fff8e1, #fffde7);
+      --card-bg: #ffffff;
+      --text-color: #333;
+      --text-light: #666;
+      --shadow: 0 4px 10px rgba(0,0,0,0.1);
+      --transition: all 0.3s ease;
     }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(to right, #fff8e1, #fffde7);
+
+    * {
       margin: 0;
       padding: 0;
+      box-sizing: border-box;
     }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--background-gradient);
+      color: var(--text-color);
+      line-height: 1.6;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app-container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
     header {
       background-color: var(--primary-color);
       color: white;
@@ -24,34 +47,53 @@
       font-size: 1.8rem;
       font-weight: bold;
       box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    .container {
-      max-width: 700px;
-      margin: 2rem auto;
-      padding: 2rem;
-      background-color: #ffffff;
       border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
     }
+
+    .card {
+      background: var(--card-bg);
+      border-radius: 10px;
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: var(--transition);
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
     .login {
       display: flex;
       flex-direction: column;
       gap: 1rem;
       margin-bottom: 2rem;
     }
+
     .input-group {
       display: flex;
       gap: 10px;
       flex-wrap: wrap;
       margin-bottom: 1.5rem;
     }
-    input[type="text"], input[type="date"], select {
+
+    input, select {
       padding: 0.75rem;
       font-size: 1rem;
       border: 2px solid var(--accent-color);
       border-radius: 5px;
       flex: 1;
+      transition: var(--transition);
     }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px rgba(183, 28, 28, 0.2);
+    }
+
     button {
       padding: 0.75rem 1.2rem;
       background-color: var(--accent-color);
@@ -59,16 +101,47 @@
       border-radius: 5px;
       font-weight: bold;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      transition: var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
     }
+
     button:hover {
       background-color: #fdd835;
+      transform: translateY(-2px);
     }
-    ul {
+
+    .btn-delete {
+      background-color: #f44336;
+      color: white;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+
+    .btn-delete:hover {
+      background-color: #d32f2f;
+    }
+
+    .download-btn {
+      margin-top: 1.5rem;
+      width: 100%;
+      background-color: var(--primary-color);
+      color: white;
+      padding: 1rem;
+    }
+
+    .download-btn:hover {
+      background-color: #c62828;
+    }
+
+    .task-list {
       list-style-type: none;
       padding: 0;
     }
-    li {
+
+    .task-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -77,41 +150,152 @@
       padding: 0.75rem;
       border-left: 5px solid var(--primary-color);
       border-radius: 5px;
-      transition: background-color 0.3s ease;
+      transition: var(--transition);
     }
-    li.completed {
+
+    .task-item:hover {
+      transform: translateX(5px);
+      background: #fff9c4;
+    }
+
+    .task-item.completed {
       text-decoration: line-through;
       color: #999;
       background-color: #f0f0f0;
       border-left-color: #ccc;
     }
+
     .task-info {
       display: flex;
       flex-direction: column;
+      flex: 1;
+      margin-left: 1rem;
     }
-    .meta {
+
+    .task-text {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .task-meta {
+      display: flex;
+      gap: 15px;
       font-size: 0.85rem;
-      color: #666;
+      color: var(--text-light);
     }
+
+    .task-category {
+      background: #ffecb3;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+    }
+
+    .task-controls {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .checkbox-container {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      border: 2px solid var(--primary-color);
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
     input[type="checkbox"] {
-      margin-right: 1rem;
-      transform: scale(1.2);
+      display: none;
     }
-    .download-btn {
-      margin-top: 1.5rem;
-      width: 100%;
-      background-color: var(--primary-color);
+
+    input[type="checkbox"]:checked + .custom-checkbox {
+      background: var(--primary-color);
+    }
+
+    input[type="checkbox"]:checked + .custom-checkbox::after {
+      content: '✓';
       color: white;
+      font-weight: bold;
     }
-    .download-btn:hover {
-      background-color: #c62828;
+
+    .stats {
+      display: flex;
+      justify-content: space-around;
+      margin: 1.5rem 0;
+      text-align: center;
+    }
+
+    .stat-item {
+      padding: 10px;
+    }
+
+    .stat-value {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary-color);
+    }
+
+    .stat-label {
+      font-size: 0.9rem;
+      color: var(--text-light);
+    }
+
+    .welcome-message {
+      text-align: center;
+      margin: 1rem 0;
+      color: var(--text-light);
+    }
+
+    @media (max-width: 768px) {
+      .input-group {
+        flex-direction: column;
+      }
+      
+      input, select {
+        width: 100%;
+      }
+      
+      .task-meta {
+        flex-direction: column;
+        gap: 5px;
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .task-item {
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateX(-20px); }
+      to { opacity: 1; transform: translateX(0); }
     }
   </style>
 </head>
 <body>
-  <header id="header">Task Dashboard</header>
-  <div class="container">
-    <div class="login" id="loginSection">
+  <div class="app-container">
+    <header id="header">Task Dashboard</header>
+
+    <div class="card login" id="loginSection">
+      <h2>Welcome! Let's get started</h2>
       <input type="text" id="username" placeholder="Enter your name" />
       <select id="themeColor">
         <option value="#b71c1c">Red</option>
@@ -119,23 +303,50 @@
         <option value="#2e7d32">Green</option>
         <option value="#1565c0">Blue</option>
       </select>
-      <button onclick="startDashboard()">Start</button>
+      <button onclick="startDashboard()"><i class="fas fa-play-circle"></i> Start</button>
     </div>
 
     <div id="dashboard" style="display:none;">
-      <div class="input-group">
-        <input type="text" id="taskInput" placeholder="Task description..." />
-        <select id="categoryInput">
-          <option value="💼 Work">💼 Work</option>
-          <option value="📦 Logistics">📦 Logistics</option>
-          <option value="🧘 Personal">🧘 Personal</option>
-          <option value="⚠️ Urgent">⚠️ Urgent</option>
-        </select>
-        <input type="date" id="dueDateInput" />
-        <button onclick="addTask()">Add</button>
+      <div class="card fade-in">
+        <h2>Hello, <span id="userNameDisplay"></span>!</h2>
+        <p>What would you like to add to your task list today?</p>
+        
+        <div class="input-group">
+          <input type="text" id="taskInput" placeholder="Task description..." />
+          <select id="categoryInput">
+            <option value="💼 Work">💼 Work</option>
+            <option value="📦 Logistics">📦 Logistics</option>
+            <option value="🧘 Personal">🧘 Personal</option>
+            <option value="⚠️ Urgent">⚠️ Urgent</option>
+          </select>
+          <input type="date" id="dueDateInput" />
+          <button onclick="addTask()"><i class="fas fa-plus"></i> Add</button>
+        </div>
       </div>
-      <ul id="taskList"></ul>
-      <button class="download-btn" onclick="downloadPDF()">Download as PDF</button>
+
+      <div class="stats fade-in">
+        <div class="stat-item">
+          <div class="stat-value" id="totalTasks">0</div>
+          <div class="stat-label">Total Tasks</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="completedTasks">0</div>
+          <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" id="pendingTasks">0</div>
+          <div class="stat-label">Pending</div>
+        </div>
+      </div>
+
+      <div class="card fade-in">
+        <h2>Your Tasks</h2>
+        <ul id="taskList" class="task-list"></ul>
+        
+        <button class="download-btn" onclick="downloadPDF()">
+          <i class="fas fa-download"></i> Download as PDF
+        </button>
+      </div>
     </div>
   </div>
 
@@ -153,8 +364,10 @@
       document.documentElement.style.setProperty('--primary-color', color);
       document.getElementById("loginSection").style.display = "none";
       document.getElementById("dashboard").style.display = "block";
+      document.getElementById("userNameDisplay").textContent = name;
 
       loadTasks();
+      updateStats();
     }
 
     function addTask() {
@@ -163,38 +376,93 @@
       const dueDate = document.getElementById("dueDateInput").value;
       if (!text) return;
 
-      const task = { text, category, dueDate, completed: false };
+      const task = { 
+        text, 
+        category, 
+        dueDate, 
+        completed: false,
+        id: Date.now() // Add unique ID for better task management
+      };
       tasks.push(task);
       saveTasks();
       renderTasks();
+      updateStats();
+      
+      // Clear input fields
       document.getElementById("taskInput").value = "";
       document.getElementById("dueDateInput").value = "";
+      
+      // Set focus back to task input
+      document.getElementById("taskInput").focus();
+    }
+
+    function deleteTask(id) {
+      if (confirm("Are you sure you want to delete this task?")) {
+        tasks = tasks.filter(task => task.id !== id);
+        saveTasks();
+        renderTasks();
+        updateStats();
+      }
+    }
+
+    function toggleTaskCompletion(id) {
+      const task = tasks.find(task => task.id === id);
+      if (task) {
+        task.completed = !task.completed;
+        saveTasks();
+        renderTasks();
+        updateStats();
+      }
     }
 
     function renderTasks() {
       const list = document.getElementById("taskList");
       list.innerHTML = "";
-      tasks.forEach((task, index) => {
+      
+      if (tasks.length === 0) {
+        list.innerHTML = `<div class="welcome-message">You don't have any tasks yet. Add some tasks to get started!</div>`;
+        return;
+      }
+      
+      tasks.forEach((task) => {
         const li = document.createElement("li");
-        if (task.completed) li.classList.add("completed");
-
-        const checkbox = document.createElement("input");
-        checkbox.type = "checkbox";
-        checkbox.checked = task.completed;
-        checkbox.onclick = () => {
-          task.completed = !task.completed;
-          saveTasks();
-          renderTasks();
-        };
-
-        const info = document.createElement("div");
-        info.className = "task-info";
-        info.innerHTML = `<strong>${task.category} ${task.text}</strong><span class="meta">Due: ${task.dueDate || "N/A"}</span>`;
-
-        li.appendChild(checkbox);
-        li.appendChild(info);
+        li.className = `task-item ${task.completed ? 'completed' : ''}`;
+        
+        li.innerHTML = `
+          <div class="task-controls">
+            <label class="checkbox-container">
+              <input type="checkbox" ${task.completed ? 'checked' : ''} />
+              <span class="custom-checkbox"></span>
+            </label>
+          </div>
+          <div class="task-info">
+            <div class="task-text">${task.text}</div>
+            <div class="task-meta">
+              <span class="task-category">${task.category}</span>
+              <span class="task-due"><i class="far fa-calendar-alt"></i> Due: ${task.dueDate || "No deadline"}</span>
+            </div>
+          </div>
+          <button class="btn-delete" onclick="deleteTask(${task.id})">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        `;
+        
+        // Add event listener to the checkbox
+        const checkbox = li.querySelector('input[type="checkbox"]');
+        checkbox.addEventListener('change', () => toggleTaskCompletion(task.id));
+        
         list.appendChild(li);
       });
+    }
+
+    function updateStats() {
+      const totalTasks = tasks.length;
+      const completedTasks = tasks.filter(task => task.completed).length;
+      const pendingTasks = totalTasks - completedTasks;
+      
+      document.getElementById("totalTasks").textContent = totalTasks;
+      document.getElementById("completedTasks").textContent = completedTasks;
+      document.getElementById("pendingTasks").textContent = pendingTasks;
     }
 
     function saveTasks() {
@@ -207,28 +475,109 @@
       renderTasks();
     }
 
-    async function downloadPDF() {
+    function downloadPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
-      let y = 10;
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(16);
-      doc.text("Task List Export", 10, y);
-      y += 10;
-      doc.setFontSize(10);
-      doc.text(`User: ${currentUser} | Exported: ${new Date().toLocaleString()}`, 10, y);
-      y += 10;
-
-      let count = 1;
-      tasks.forEach((task) => {
-        if (task.text === "Ø=Ü¼") return; // Skip unwanted entry
-        const line = `${count++}. ${task.category} ${task.text} | Due: ${task.dueDate || "N/A"} ${task.completed ? "[✓]" : ""}`;
-        doc.text(line, 10, y);
-        y += 8;
-      });
-
+      
+      // Add header with styling
+      doc.setFillColor(183, 28, 28);
+      doc.rect(0, 0, 210, 30, 'F');
+      doc.setFontSize(20);
+      doc.setTextColor(255, 255, 255);
+      doc.text("Task List Export", 105, 17, { align: 'center' });
+      
+      // Add user info section
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`User: ${currentUser}`, 15, 45);
+      doc.text(`Exported: ${new Date().toLocaleString()}`, 15, 52);
+      
+      // Add summary section
+      const completedTasks = tasks.filter(task => task.completed).length;
+      const pendingTasks = tasks.length - completedTasks;
+      
+      doc.setFontSize(14);
+      doc.setTextColor(183, 28, 28);
+      doc.text("Summary", 15, 70);
+      
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text(`Total Tasks: ${tasks.length}`, 15, 80);
+      doc.text(`Completed: ${completedTasks}`, 15, 87);
+      doc.text(`Pending: ${pendingTasks}`, 15, 94);
+      
+      // Add tasks table
+      if (tasks.length > 0) {
+        doc.setFontSize(14);
+        doc.setTextColor(183, 28, 28);
+        doc.text("Task Details", 15, 110);
+        
+        const tableColumn = ["#", "Task", "Category", "Due Date", "Status"];
+        const tableRows = [];
+        
+        tasks.forEach((task, index) => {
+          // Clean category text to remove any encoding issues
+          const cleanCategory = task.category.replace(/[^\x20-\x7E]/g, '');
+          
+          const taskData = [
+            index + 1,
+            task.text,
+            cleanCategory,
+            task.dueDate || "N/A",
+            task.completed ? "Completed" : "Pending"
+          ];
+          tableRows.push(taskData);
+        });
+        
+        doc.autoTable({
+          head: [tableColumn],
+          body: tableRows,
+          startY: 115,
+          theme: 'grid',
+          styles: {
+            fontSize: 10,
+            cellPadding: 3,
+            valign: 'middle'
+          },
+          headStyles: {
+            fillColor: [183, 28, 28],
+            textColor: 255,
+            fontStyle: 'bold'
+          },
+          alternateRowStyles: {
+            fillColor: [255, 248, 225]
+          },
+          columnStyles: {
+            0: { cellWidth: 10 },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 30 },
+            3: { cellWidth: 35 },
+            4: { cellWidth: 25 }
+          },
+          didDrawPage: function (data) {
+            // Footer
+            doc.setFontSize(10);
+            doc.setTextColor(100);
+            doc.text(
+              `Page ${data.pageNumber}`,
+              doc.internal.pageSize.width / 2,
+              doc.internal.pageSize.height - 10,
+              { align: 'center' }
+            );
+          }
+        });
+      } else {
+        doc.setFontSize(12);
+        doc.setTextColor(100);
+        doc.text("No tasks to display", 15, 115);
+      }
+      
+      // Save the PDF
       doc.save(`${currentUser}_task_dashboard.pdf`);
     }
+
+    // Set today's date as the default for the date picker
+    document.getElementById('dueDateInput').valueAsDate = new Date();
   </script>
 </body>
 </html>
