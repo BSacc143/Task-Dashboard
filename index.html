@@ -255,6 +255,14 @@
       margin: 1rem 0;
       color: var(--text-light);
     }
+    
+    .last-login {
+      text-align: center;
+      margin: 0.5rem 0;
+      color: var(--text-light);
+      font-size: 0.9rem;
+      font-style: italic;
+    }
 
     @media (max-width: 768px) {
       .input-group {
@@ -304,6 +312,7 @@
         <option value="#1565c0">Blue</option>
       </select>
       <button onclick="startDashboard()"><i class="fas fa-play-circle"></i> Start</button>
+      <div id="lastLoginInfo" class="last-login" style="display: none;"></div>
     </div>
 
     <div id="dashboard" style="display:none;">
@@ -354,11 +363,43 @@
     let tasks = [];
     let currentUser = "";
 
+    // Function to check if a user has logged in within the last 12 hours
+    function checkLastLogin(username) {
+      const userData = localStorage.getItem(`user_${username}`);
+      if (!userData) return null;
+      
+      const user = JSON.parse(userData);
+      const lastLogin = new Date(user.lastLogin);
+      const now = new Date();
+      const hoursDiff = (now - lastLogin) / (1000 * 60 * 60);
+      
+      if (hoursDiff < 12) {
+        return user.lastLogin;
+      }
+      
+      return null;
+    }
+
+    // Function to save user login time
+    function saveUserLogin(username) {
+      const userData = {
+        username: username,
+        lastLogin: new Date().toISOString()
+      };
+      localStorage.setItem(`user_${username}`, JSON.stringify(userData));
+    }
+
     function startDashboard() {
       const name = document.getElementById("username").value.trim();
       const color = document.getElementById("themeColor").value;
       if (!name) return alert("Please enter your name");
 
+      // Check if user has logged in within the last 12 hours
+      const lastLogin = checkLastLogin(name);
+      
+      // Save the current login time
+      saveUserLogin(name);
+      
       currentUser = name;
       document.getElementById("header").textContent = `${name}'s Task Dashboard`;
       document.documentElement.style.setProperty('--primary-color', color);
@@ -369,6 +410,30 @@
       loadTasks();
       updateStats();
     }
+
+    // Show last login info when page loads if available
+    window.onload = function() {
+      const usernameInput = document.getElementById('username');
+      
+      usernameInput.addEventListener('input', function() {
+        const name = this.value.trim();
+        const lastLoginInfo = document.getElementById('lastLoginInfo');
+        
+        if (name) {
+          const lastLogin = checkLastLogin(name);
+          if (lastLogin) {
+            const loginDate = new Date(lastLogin);
+            const formattedDate = loginDate.toLocaleString();
+            lastLoginInfo.textContent = `Welcome back! Your last login was: ${formattedDate}`;
+            lastLoginInfo.style.display = 'block';
+          } else {
+            lastLoginInfo.style.display = 'none';
+          }
+        } else {
+          lastLoginInfo.style.display = 'none';
+        }
+      });
+    };
 
     function addTask() {
       const text = document.getElementById("taskInput").value.trim();
